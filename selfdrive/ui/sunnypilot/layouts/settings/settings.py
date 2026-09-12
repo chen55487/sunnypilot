@@ -11,6 +11,7 @@ import pyray as rl
 from openpilot.selfdrive.ui.layouts.settings import settings as OP
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
+from openpilot.selfdrive.ui.sunnypilot.layouts.settings.cms import CmsAlertLayout
 from openpilot.selfdrive.ui.sunnypilot.layouts.settings.cruise import CruiseLayout
 from openpilot.selfdrive.ui.sunnypilot.layouts.settings.developer import DeveloperLayoutSP
 from openpilot.selfdrive.ui.sunnypilot.layouts.settings.device import DeviceLayoutSP
@@ -47,6 +48,7 @@ OP.PanelType = IntEnum(
     "VISUALS",
     "DISPLAY",
     "OSM",
+    "CMS",
     "NAVIGATION",
     "TRIPS",
     "VEHICLE",
@@ -120,6 +122,7 @@ class SettingsLayoutSP(OP.SettingsLayout):
       OP.PanelType.VISUALS: PanelInfo(tr_noop("Visuals"), VisualsLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_visuals.png"),
       OP.PanelType.DISPLAY: PanelInfo(tr_noop("Display"), DisplayLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_display.png"),
       OP.PanelType.OSM: PanelInfo(tr_noop("OSM"), OSMLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_map.png"),
+      OP.PanelType.CMS: PanelInfo(tr_noop("CMS Alert"), CmsAlertLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_map.png"),
       # OP.PanelType.NAVIGATION: PanelInfo(tr_noop("Navigation"), NavigationLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_map.png"),
       OP.PanelType.TRIPS: PanelInfo(tr_noop("Trips"), TripsLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_trips.png"),
       OP.PanelType.VEHICLE: PanelInfo(tr_noop("Vehicle"), VehicleLayout(), icon="../../sunnypilot/selfdrive/assets/offroad/icon_vehicle.png"),

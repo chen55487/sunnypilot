@@ -277,4 +277,18 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"TorqueParamsOverrideEnabled", {PERSISTENT | BACKUP, BOOL, "0"}},
     {"TorqueParamsOverrideFriction", {PERSISTENT | BACKUP, FLOAT, "0.1"}},
     {"TorqueParamsOverrideLatAccelFactor", {PERSISTENT | BACKUP, FLOAT, "2.5"}},
+
+    // CMS Alert params
+    {"CmsAlertEnabled", {PERSISTENT | BACKUP, BOOL, "1"}},
+    {"CmsAlertUrl", {PERSISTENT | BACKUP, STRING, "https://cms.tnchen.info/active_cms.json"}},
+    {"CmsApiKey", {PERSISTENT | BACKUP, STRING, ""}},
+    {"CmsAlertRadius", {PERSISTENT | BACKUP, FLOAT, "800.0"}},
+    {"CmsEnabledTypes", {PERSISTENT | BACKUP, STRING, "[\"7\"]"}},
+    {"CmsMutedTypes", {PERSISTENT | BACKUP, STRING, "[]"}},
+    {"CmsCurrentText", {CLEAR_ON_ONROAD_TRANSITION, STRING}},
+    {"CmsCurrentDist", {CLEAR_ON_ONROAD_TRANSITION, STRING}},
+    {"CmsCurrentType", {CLEAR_ON_ONROAD_TRANSITION, STRING}},
+    {"CmsCurrentId", {CLEAR_ON_ONROAD_TRANSITION, STRING}},
+    {"CmsFetchStatus", {CLEAR_ON_MANAGER_START, STRING}},
+    {"CmsAlertHistory", {CLEAR_ON_MANAGER_START, JSON}},
 };

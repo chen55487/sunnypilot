@@ -8,6 +8,7 @@ import pyray as rl
 
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
+from openpilot.selfdrive.ui.sunnypilot.onroad.cms_alert import CmsAlertRenderer
 from openpilot.selfdrive.ui.sunnypilot.onroad.developer_ui import DeveloperUiRenderer, DeveloperUiState, get_bottom_dev_ui_offset
 from openpilot.selfdrive.ui.sunnypilot.onroad.road_name import RoadNameRenderer
 from openpilot.selfdrive.ui.sunnypilot.onroad.rocket_fuel import RocketFuel
@@ -30,6 +31,7 @@ class HudRendererSP(HudRenderer):
     super().__init__()
     self.developer_ui = DeveloperUiRenderer()
     self.road_name_renderer = RoadNameRenderer()
+    self.cms_alert_renderer = CmsAlertRenderer()
     self.rocket_fuel = RocketFuel()
     self.speed_limit_renderer = SpeedLimitRenderer()
     self.smart_cruise_control_renderer = SmartCruiseControlRenderer()
@@ -55,6 +57,7 @@ class HudRendererSP(HudRenderer):
 
     super()._update_state()
     self.road_name_renderer.update()
+    self.cms_alert_renderer.update()
     self.speed_limit_renderer.update()
     self.smart_cruise_control_renderer.update()
     self.turn_signal_controller.update()
@@ -139,6 +142,7 @@ class HudRendererSP(HudRenderer):
 
     self.developer_ui.render(rect)
     self.road_name_renderer.render(rect)
+    self.cms_alert_renderer.render(rect)
     self.speed_limit_renderer.render(rect)
     self.smart_cruise_control_renderer.render(rect)
     self.turn_signal_controller.render(rect)

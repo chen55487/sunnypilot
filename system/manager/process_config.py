@@ -182,6 +182,9 @@ procs += [
 
   # locationd
   NativeProcess("locationd_llk", "sunnypilot/selfdrive/locationd", ["./locationd"], only_onroad),
+
+  # cms
+  PythonProcess("cmsd", "sunnypilot.cms.cmsd", always_run),
 ]
 
 if os.path.exists("./github_runner.sh"):

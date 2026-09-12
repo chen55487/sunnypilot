@@ -1,0 +1,225 @@
+"""
+Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
+
+This file is part of sunnypilot and is licensed under the MIT License.
+See the LICENSE.md file in the root directory for more details.
+"""
+import json
+import platform
+from datetime import datetime
+
+import pyray as rl
+
+from openpilot.common.params import Params
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.sunnypilot.widgets.input_dialog import InputDialogSP
+from openpilot.system.ui.sunnypilot.widgets.list_view import (
+  ListItemSP,
+  button_item_sp,
+  multiple_button_item_sp,
+  toggle_item_sp,
+  ToggleActionSP,
+)
+from openpilot.system.ui.widgets import DialogResult, Widget
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
+from openpilot.system.ui.widgets.list_view import text_item
+from openpilot.system.ui.widgets.scroller_tici import Scroller
+
+DEFAULT_CMS_URL = "https://cms.tnchen.info/active_cms.json"
+RADIUS_OPTIONS = ["500m", "800m", "1000m", "1500m"]
+RADIUS_VALUES = [500.0, 800.0, 1000.0, 1500.0]
+
+CMS_CATEGORIES = [
+  ("1", tr("1: Travel Time (旅行時間)")),
+  ("2", tr("2: Congestion (壅塞資訊)")),
+  ("3", tr("3: Accident (事故資訊)")),
+  ("4", tr("4: Construction (施工資訊)")),
+  ("5", tr("5: Parking (停車資訊)")),
+  ("6", tr("6: Announcement (政令宣導)")),
+  ("7", tr("7: Emergency (突發狀況)")),
+]
+
+
+class CmsAlertLayout(Widget):
+  def __init__(self):
+    super().__init__()
+    self._params = Params()
+    self._mem_params = Params("/dev/shm/params") if platform.system() != "Darwin" else ui_state.params
+
+    items = self._initialize_items()
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
+
+  def _get_url_desc(self) -> str:
+    url = self._params.get("CmsAlertUrl") or DEFAULT_CMS_URL
+    return f"{tr('Current URL')}: {url}"
+
+  def _get_key_desc(self) -> str:
+    key = self._params.get("CmsApiKey") or ""
+    return f"{tr('Status')}: {tr('Configured') if key else tr('Not Set')}"
+
+  def _edit_url(self):
+    current = self._params.get("CmsAlertUrl") or DEFAULT_CMS_URL
+    dialog = InputDialogSP(
+      title=tr("active_cms.json API URL"),
+      sub_title=tr("Enter full HTTPS URL for CMS data"),
+      current_text=current,
+      param="CmsAlertUrl",
+      callback=lambda res, text: None,
+    )
+    dialog.show()
+
+  def _edit_key(self):
+    current = self._params.get("CmsApiKey") or ""
+    dialog = InputDialogSP(
+      title=tr("Cloudflare x-api-key"),
+      sub_title=tr("Enter API Key header value (leave blank if not needed)"),
+      current_text=current,
+      param="CmsApiKey",
+      password_mode=True,
+      callback=lambda res, text: None,
+    )
+    dialog.show()
+
+  def _get_enabled_types(self) -> set[str]:
+    raw = self._params.get("CmsEnabledTypes")
+    try:
+      return set(json.loads(raw)) if raw else {"7"}
+    except Exception:
+      return {"7"}
+
+  def _toggle_category(self, type_key: str, is_checked: bool):
+    types = self._get_enabled_types()
+    if is_checked:
+      types.add(type_key)
+    else:
+      types.discard(type_key)
+    self._params.put("CmsEnabledTypes", json.dumps(sorted(list(types))))
+
+  def _on_radius_selected(self, index: int):
+    if 0 <= index < len(RADIUS_VALUES):
+      self._params.put("CmsAlertRadius", str(RADIUS_VALUES[index]))
+
+  def _get_radius_index(self) -> int:
+    try:
+      val = float(self._params.get("CmsAlertRadius") or 800.0)
+      for i, r in enumerate(RADIUS_VALUES):
+        if abs(val - r) < 1.0:
+          return i
+    except Exception:
+      pass
+    return 1  # default 800m
+
+  def _get_history_desc(self) -> str:
+    raw = self._mem_params.get("CmsAlertHistory")
+    if not raw:
+      return tr("No recent alerts")
+    try:
+      history = json.loads(raw)
+      if not history:
+        return tr("No recent alerts")
+      latest = history[0]
+      ts = latest.get("timestamp", 0)
+      time_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S") if ts else ""
+      return f"{tr('Latest')}: [{time_str}] {latest.get('text', '')}"
+    except Exception:
+      return tr("No recent alerts")
+
+  def _view_history_dialog(self):
+    raw = self._mem_params.get("CmsAlertHistory")
+    content = tr("No recent alerts recorded.")
+    if raw:
+      try:
+        history = json.loads(raw)
+        if history:
+          lines = []
+          for item in history[:10]:
+            ts = item.get("timestamp", 0)
+            t_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S") if ts else ""
+            lines.append(f"[{t_str}] {item.get('text', '')}")
+          content = "\n".join(lines)
+      except Exception:
+        pass
+
+    gui_app.push_widget(ConfirmDialog(content, tr("Close"), callback=lambda res: None))
+
+  def _initialize_items(self) -> list[Widget]:
+    items = []
+
+    # 1. Master Enable Toggle
+    items.append(
+      toggle_item_sp(
+        title=tr("Enable CMS Alert"),
+        description=tr("Displays real-time CMS traffic information when entering the alert radius of highway signs."),
+        param="CmsAlertEnabled",
+      )
+    )
+
+    # 2. API URL setting
+    items.append(
+      button_item_sp(
+        title=tr("active_cms.json URL"),
+        button_text=tr("EDIT"),
+        description=self._get_url_desc,
+        callback=self._edit_url,
+      )
+    )
+
+    # 3. API Key setting
+    items.append(
+      button_item_sp(
+        title=tr("API Key (x-api-key)"),
+        button_text=tr("SET"),
+        description=self._get_key_desc,
+        callback=self._edit_key,
+      )
+    )
+
+    # 4. Alert Radius buttons
+    items.append(
+      multiple_button_item_sp(
+        title=tr("Alert Radius"),
+        description=tr("Distance threshold to trigger CMS popup alerts."),
+        buttons=RADIUS_OPTIONS,
+        selected_index=self._get_radius_index(),
+        callback=self._on_radius_selected,
+      )
+    )
+
+    # 5. Connection Status
+    items.append(
+      text_item(
+        tr("API Connection Status"),
+        lambda: self._mem_params.get("CmsFetchStatus") or tr("Waiting for updates..."),
+      )
+    )
+
+    # 6. Recent Alert History
+    items.append(
+      button_item_sp(
+        title=tr("Recent Alert History"),
+        button_text=tr("VIEW"),
+        description=self._get_history_desc,
+        callback=self._view_history_dialog,
+      )
+    )
+
+    # 7. Category Toggles (7 Categories)
+    current_enabled = self._get_enabled_types()
+    for type_key, type_label in CMS_CATEGORIES:
+      action = ToggleActionSP(
+        initial_state=(type_key in current_enabled),
+        callback=lambda checked, k=type_key: self._toggle_category(k, checked),
+      )
+      item = ListItemSP(
+        title=type_label,
+        description=tr("Show alerts in this category"),
+        action_item=action,
+      )
+      items.append(item)
+
+    return items
+
+  def _render(self, rect: rl.Rectangle):
+    self._scroller.render(rect)
