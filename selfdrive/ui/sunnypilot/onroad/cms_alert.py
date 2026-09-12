@@ -4,7 +4,10 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
+import json
+import os
 import platform
+import subprocess
 import time
 import pyray as rl
 
@@ -66,6 +69,16 @@ class CmsAlertRenderer(Widget):
         self.display_start_time = time.monotonic()
         self.minimized = False
         self.active = True
+
+        # Check if category is muted (僅顯示)
+        muted_raw = ui_state.params.get("CmsMutedTypes")
+        try:
+          muted_types = set(json.loads(muted_raw)) if muted_raw else set()
+        except Exception:
+          muted_types = set()
+
+        if type_str not in muted_types:
+          self._play_alert_sound()
       else:
         self.current_dist = dist
         self.current_type = type_str
@@ -76,6 +89,14 @@ class CmsAlertRenderer(Widget):
       self.current_text = ""
       self.active = False
       self.minimized = False
+
+  def _play_alert_sound(self):
+    try:
+      sound_path = "/data/openpilot/selfdrive/assets/sounds/prompt.wav"
+      if os.path.exists(sound_path):
+        subprocess.Popen(["aplay", "-q", sound_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+      pass
 
   def _handle_touch(self):
     """Allow user to tap the alert card to toggle minimized/dismissed state."""

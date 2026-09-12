@@ -40,6 +40,7 @@ CMS_CATEGORIES = [
   ("6", tr("6: Announcement (政令宣導)")),
   ("7", tr("7: Emergency (突發狀況)")),
 ]
+CATEGORY_MODES = [tr("關閉"), tr("僅顯示"), tr("警示")]
 
 
 class CmsAlertLayout(Widget):
@@ -89,13 +90,37 @@ class CmsAlertLayout(Widget):
     except Exception:
       return {"7"}
 
-  def _toggle_category(self, type_key: str, is_checked: bool):
-    types = self._get_enabled_types()
-    if is_checked:
-      types.add(type_key)
+  def _get_muted_types(self) -> set[str]:
+    raw = self._params.get("CmsMutedTypes")
+    try:
+      return set(json.loads(raw)) if raw else set()
+    except Exception:
+      return set()
+
+  def _get_category_mode(self, type_key: str) -> int:
+    enabled = self._get_enabled_types()
+    muted = self._get_muted_types()
+    if type_key not in enabled:
+      return 0  # 關閉 (Off)
+    elif type_key in muted:
+      return 1  # 僅顯示 (Display Only)
     else:
-      types.discard(type_key)
-    self._params.put("CmsEnabledTypes", json.dumps(sorted(list(types))))
+      return 2  # 警示 (Alert)
+
+  def _on_category_mode_selected(self, type_key: str, index: int):
+    enabled = self._get_enabled_types()
+    muted = self._get_muted_types()
+    if index == 0:  # 關閉
+      enabled.discard(type_key)
+      muted.discard(type_key)
+    elif index == 1:  # 僅顯示
+      enabled.add(type_key)
+      muted.add(type_key)
+    elif index == 2:  # 警示
+      enabled.add(type_key)
+      muted.discard(type_key)
+    self._params.put("CmsEnabledTypes", json.dumps(sorted(list(enabled))))
+    self._params.put("CmsMutedTypes", json.dumps(sorted(list(muted))))
 
   def _on_radius_selected(self, index: int):
     if 0 <= index < len(RADIUS_VALUES):
@@ -205,17 +230,15 @@ class CmsAlertLayout(Widget):
       )
     )
 
-    # 7. Category Toggles (7 Categories)
-    current_enabled = self._get_enabled_types()
+    # 7. Category Controls (7 Categories: 關閉 / 僅顯示 / 警示)
     for type_key, type_label in CMS_CATEGORIES:
-      action = ToggleActionSP(
-        initial_state=(type_key in current_enabled),
-        callback=lambda checked, k=type_key: self._toggle_category(k, checked),
-      )
-      item = ListItemSP(
+      item = multiple_button_item_sp(
         title=type_label,
-        description=tr("Show alerts in this category"),
-        action_item=action,
+        description=tr("選擇模式：關閉（不提醒）、僅顯示（靜音）、警示（聲音+顯示）"),
+        buttons=CATEGORY_MODES,
+        button_width=160,
+        selected_index=self._get_category_mode(type_key),
+        callback=lambda idx, k=type_key: self._on_category_mode_selected(k, idx),
       )
       items.append(item)
 
