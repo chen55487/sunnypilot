@@ -32,15 +32,15 @@ RADIUS_OPTIONS = ["500m", "800m", "1000m", "1500m"]
 RADIUS_VALUES = [500.0, 800.0, 1000.0, 1500.0]
 
 CMS_CATEGORIES = [
-  ("1", tr("1: Travel Time (旅行時間)")),
-  ("2", tr("2: Congestion (壅塞資訊)")),
-  ("3", tr("3: Accident (事故資訊)")),
-  ("4", tr("4: Construction (施工資訊)")),
-  ("5", tr("5: Parking (停車資訊)")),
-  ("6", tr("6: Announcement (政令宣導)")),
-  ("7", tr("7: Emergency (突發狀況)")),
+  ("1", tr("1: Travel Time")),
+  ("2", tr("2: Congestion")),
+  ("3", tr("3: Accident")),
+  ("4", tr("4: Construction")),
+  ("5", tr("5: Parking")),
+  ("6", tr("6: Announcement")),
+  ("7", tr("7: Emergency")),
 ]
-CATEGORY_MODES = [tr("關閉"), tr("僅顯示"), tr("警示")]
+CATEGORY_MODES = [tr("Off"), tr("Display Only"), tr("Alert")]
 
 
 class CmsAlertLayout(Widget):
@@ -101,22 +101,22 @@ class CmsAlertLayout(Widget):
     enabled = self._get_enabled_types()
     muted = self._get_muted_types()
     if type_key not in enabled:
-      return 0  # 關閉 (Off)
+      return 0  # Off
     elif type_key in muted:
-      return 1  # 僅顯示 (Display Only)
+      return 1  # Display Only
     else:
-      return 2  # 警示 (Alert)
+      return 2  # Alert
 
   def _on_category_mode_selected(self, type_key: str, index: int):
     enabled = self._get_enabled_types()
     muted = self._get_muted_types()
-    if index == 0:  # 關閉
+    if index == 0:  # Off
       enabled.discard(type_key)
       muted.discard(type_key)
-    elif index == 1:  # 僅顯示
+    elif index == 1:  # Display Only
       enabled.add(type_key)
       muted.add(type_key)
-    elif index == 2:  # 警示
+    elif index == 2:  # Alert
       enabled.add(type_key)
       muted.discard(type_key)
     self._params.put("CmsEnabledTypes", json.dumps(sorted(list(enabled))))
@@ -230,11 +230,11 @@ class CmsAlertLayout(Widget):
       )
     )
 
-    # 7. Category Controls (7 Categories: 關閉 / 僅顯示 / 警示)
+    # 7. Category Controls (7 Categories: Off / Display Only / Alert)
     for type_key, type_label in CMS_CATEGORIES:
       item = multiple_button_item_sp(
         title=type_label,
-        description=tr("選擇模式：關閉（不提醒）、僅顯示（靜音）、警示（聲音+顯示）"),
+        description=tr("Select mode: Off (Disabled), Display Only (Silent card), Alert (Sound + Card)"),
         buttons=CATEGORY_MODES,
         button_width=160,
         selected_index=self._get_category_mode(type_key),

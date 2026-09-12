@@ -19,13 +19,13 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 
 CMS_TYPE_LABELS = {
-  "1": "旅行時間",
-  "2": "壅塞",
-  "3": "事故",
-  "4": "施工",
-  "5": "停車",
-  "6": "政令宣導",
-  "7": "突發狀況",
+  "1": "Travel Time",
+  "2": "Congestion",
+  "3": "Accident",
+  "4": "Construction",
+  "5": "Parking",
+  "6": "Announcement",
+  "7": "Emergency",
 }
 
 ALERT_AUTO_HIDE_SECONDS = 10.0
@@ -70,7 +70,7 @@ class CmsAlertRenderer(Widget):
         self.minimized = False
         self.active = True
 
-        # Check if category is muted (僅顯示)
+        # Check if category is muted (Display Only)
         muted_raw = ui_state.params.get("CmsMutedTypes")
         try:
           muted_types = set(json.loads(muted_raw)) if muted_raw else set()
@@ -123,7 +123,7 @@ class CmsAlertRenderer(Widget):
     road_name_offset = 70 if ui_state.road_name_toggle else 15
     y_pos = rect.y + road_name_offset
 
-    type_label = CMS_TYPE_LABELS.get(self.current_type, "路況")
+    type_label = CMS_TYPE_LABELS.get(self.current_type, "Traffic")
     dist_str = f"{self.current_dist}m" if self.current_dist else ""
     header_tag = f"CMS ‧ {type_label}" + (f" ({dist_str})" if dist_str else "")
 
@@ -159,7 +159,7 @@ class CmsAlertRenderer(Widget):
     if not lines:
       lines = [self.current_text]
 
-    line_height = measure_text_cached(self.font_bold, "標", font_size_text).y
+    line_height = measure_text_cached(self.font_bold, "W", font_size_text).y
     total_text_height = len(lines) * line_height + (len(lines) - 1) * 8
 
     card_height = 55 + total_text_height + 25  # Header (55) + text body + bottom padding

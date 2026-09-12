@@ -100,12 +100,12 @@ class CmsDaemon:
             self._cached_items = items
 
           now_str = datetime.now().strftime("%H:%M:%S")
-          status_msg = f"✅ 取得成功 ({now_str})"
+          status_msg = f"✅ Connected ({now_str})"
           self.mem_params.put("CmsFetchStatus", status_msg)
           self._last_fetch_time = time.monotonic()
       except Exception as e:
         cloudlog.warning(f"CMS fetch error: {e}")
-        self.mem_params.put("CmsFetchStatus", "❌ 連線失敗")
+        self.mem_params.put("CmsFetchStatus", "❌ Connection Failed")
 
       # Sleep in small increments to respond quickly to shutdown
       for _ in range(int(DEFAULT_POLL_INTERVAL * 2)):
