@@ -39,10 +39,22 @@ class Params(_NativeParams):
       k = str(key)
     return k if k.startswith("Cms") else None
 
-  def _cms_file_path(self, key_str: str) -> str:
+  def _cms_dir(self) -> str:
     base = self.get_param_path()
-    os.makedirs(base, exist_ok=True)
-    return os.path.join(base, key_str)
+    cms_dir = os.path.join(base, ".cms")
+    os.makedirs(cms_dir, exist_ok=True)
+    return cms_dir
+
+  def _cms_file_path(self, key_str: str) -> str:
+    cms_dir = self._cms_dir()
+    new_path = os.path.join(cms_dir, key_str)
+    old_path = os.path.join(self.get_param_path(), key_str)
+    if os.path.isfile(old_path) and not os.path.exists(new_path):
+      try:
+        os.replace(old_path, new_path)
+      except Exception:
+        pass
+    return new_path
 
   def check_key(self, key):
     k = self._is_cms_key(key)
@@ -58,9 +70,7 @@ class Params(_NativeParams):
       path = self._cms_file_path(k)
       try:
         with open(path, "r", encoding="utf-8") as f:
-          val = f.read()
-          if val != "":
-            return val
+          return f.read()
       except (FileNotFoundError, PermissionError):
         pass
       if return_default or k in CMS_PARAM_DEFAULTS:
@@ -86,7 +96,11 @@ class Params(_NativeParams):
           f.write(dat_str)
         os.replace(tmp_path, path)
       except Exception:
-        pass
+        try:
+          with open(path, "w", encoding="utf-8") as f:
+            f.write(dat_str)
+        except Exception:
+          pass
       return
     return super().put(key, dat, block=block)
 

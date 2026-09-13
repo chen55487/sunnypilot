@@ -62,24 +62,31 @@ class CmsAlertLayout(Widget):
 
   def _edit_url(self):
     current = self._params.get("CmsAlertUrl") or DEFAULT_CMS_URL
+    def _on_url_saved(res, text):
+      if res == DialogResult.CONFIRM:
+        clean = text.strip() or DEFAULT_CMS_URL
+        self._params.put("CmsAlertUrl", clean)
     dialog = InputDialogSP(
       title=tr("active_cms.json API URL"),
       sub_title=tr("Enter full HTTPS URL for CMS data"),
       current_text=current,
       param="CmsAlertUrl",
-      callback=lambda res, text: None,
+      callback=_on_url_saved,
     )
     dialog.show()
 
   def _edit_key(self):
     current = self._params.get("CmsApiKey") or ""
+    def _on_key_saved(res, text):
+      if res == DialogResult.CONFIRM:
+        self._params.put("CmsApiKey", text.strip())
     dialog = InputDialogSP(
       title=tr("Cloudflare x-api-key"),
       sub_title=tr("Enter API Key header value (leave blank if not needed)"),
       current_text=current,
       param="CmsApiKey",
-      password_mode=True,
-      callback=lambda res, text: None,
+      password_mode=False,
+      callback=_on_key_saved,
     )
     dialog.show()
 
@@ -182,24 +189,23 @@ class CmsAlertLayout(Widget):
     )
 
     # 2. API URL setting
-    items.append(
-      button_item_sp(
-        title=tr("active_cms.json URL"),
-        button_text=tr("EDIT"),
-        description=self._get_url_desc,
-        callback=self._edit_url,
-      )
+    self._url_item = button_item_sp(
+      title=tr("active_cms.json URL"),
+      button_text=tr("EDIT"),
+      description=self._get_url_desc,
+      callback=self._edit_url,
     )
+    items.append(self._url_item)
 
     # 3. API Key setting
-    items.append(
-      button_item_sp(
-        title=tr("API Key (x-api-key)"),
-        button_text=tr("SET"),
-        description=self._get_key_desc,
-        callback=self._edit_key,
-      )
+    self._key_item = button_item_sp(
+      title=tr("API Key (x-api-key)"),
+      button_text=lambda: tr("CHANGE") if (self._params.get("CmsApiKey") or "").strip() else tr("SET"),
+      description=self._get_key_desc,
+      callback=self._edit_key,
     )
+    self._key_item.action_item.set_value(lambda: tr("Configured") if (self._params.get("CmsApiKey") or "").strip() else tr("Not Set"))
+    items.append(self._key_item)
 
     # 4. Alert Radius buttons
     items.append(

@@ -104,6 +104,20 @@ class TestCmsLogic(unittest.TestCase):
       req = mock_urlopen.call_args[0][0]
       self.assertEqual(req.get_header("X-api-key"), "secret123")
 
+  def test_fetch_cms_json_strips_key(self):
+    from unittest.mock import patch, MagicMock
+    from sunnypilot.cms.cmsd import fetch_cms_json
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b"[]"
+    mock_response.__enter__.return_value = mock_response
+
+    with patch("urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+      fetch_cms_json("  https://example.com/cms.json  ", api_key="  secret_token_abc  \n")
+      req = mock_urlopen.call_args[0][0]
+      self.assertEqual(req.full_url, "https://example.com/cms.json")
+      self.assertEqual(req.get_header("X-api-key"), "secret_token_abc")
+
   def test_empty_or_malformed_items(self):
     user_lat = 25.0
     user_lon = 121.5

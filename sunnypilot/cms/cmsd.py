@@ -54,10 +54,13 @@ def fetch_cms_json(url_str: str, api_key: str = "", timeout: float = 10.0) -> li
   if not url_str:
     return []
 
+  url_str = url_str.strip()
+  api_key = api_key.strip() if api_key else ""
+
   req = urllib.request.Request(url_str)
   req.add_header("User-Agent", "sunnypilot-cms/1.0")
 
-  if api_key and url_str.lower().startswith("https://"):
+  if api_key:
     req.add_header("x-api-key", api_key)
 
   with urllib.request.urlopen(req, timeout=timeout) as response:
